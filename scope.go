@@ -2,19 +2,20 @@ package twik
 
 import (
 	"fmt"
+	"launchpad.net/twik/ast"
 )
 
 // Scope is an environment where twik logic may be evaluated in.
 type Scope struct {
 	parent *Scope
-	fset   *FileSet
+	fset   *ast.FileSet
 	vars   map[string]interface{}
 }
 
 // Error holds an error and the source position where the error was found.
 type Error struct {
 	Err     error
-	PosInfo *PosInfo
+	PosInfo *ast.PosInfo
 }
 
 func (e *Error) Error() string {
@@ -22,7 +23,7 @@ func (e *Error) Error() string {
 }
 
 // NewScope returns a new scope for evaluating logic that was parsed into fset.
-func NewScope(fset *FileSet) *Scope {
+func NewScope(fset *ast.FileSet) *Scope {
 	vars := make(map[string]interface{})
 	for _, global := range defaultGlobals {
 		vars[global.name] = global.value
@@ -75,7 +76,7 @@ func (s *Scope) Branch() *Scope {
 
 var emptyList = make([]interface{}, 0)
 
-func (s *Scope) errorAt(node Node, err error) error {
+func (s *Scope) errorAt(node ast.Node, err error) error {
 	if _, ok := err.(*Error); ok {
 		return err
 	}
@@ -83,21 +84,21 @@ func (s *Scope) errorAt(node Node, err error) error {
 }
 
 // Eval evaluates node in the s scope and returns the resulting value.
-func (s *Scope) Eval(node Node) (value interface{}, err error) {
+func (s *Scope) Eval(node ast.Node) (value interface{}, err error) {
 	switch node := node.(type) {
-	case *Symbol:
+	case *ast.Symbol:
 		value, err := s.Get(node.Name)
 		if err != nil {
 			return nil, s.errorAt(node, err)
 		}
 		return value, nil
-	case *Int:
+	case *ast.Int:
 		return node.Value, nil
-	case *Float:
+	case *ast.Float:
 		return node.Value, nil
-	case *String:
+	case *ast.String:
 		return node.Value, nil
-	case *List:
+	case *ast.List:
 		if len(node.Nodes) == 0 {
 			return emptyList, nil
 		}
@@ -110,7 +111,7 @@ func (s *Scope) Eval(node Node) (value interface{}, err error) {
 			return nil, s.errorAt(node.Nodes[0], err)
 		}
 		return value, nil
-	case *Root:
+	case *ast.Root:
 		for _, node := range node.Nodes {
 			value, err = s.Eval(node)
 			if err != nil {
@@ -122,8 +123,8 @@ func (s *Scope) Eval(node Node) (value interface{}, err error) {
 	return nil, fmt.Errorf("support for %#v not yet implemeted", node)
 }
 
-func (s *Scope) call(fn interface{}, args []Node) (value interface{}, err error) {
-	if fn, ok := fn.(func(*Scope, []Node) (interface{}, error)); ok {
+func (s *Scope) call(fn interface{}, args []ast.Node) (value interface{}, err error) {
+	if fn, ok := fn.(func(*Scope, []ast.Node) (interface{}, error)); ok {
 		return fn(s, args)
 	}
 	if fn, ok := fn.(func([]interface{}) (interface{}, error)); ok {

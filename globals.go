@@ -3,6 +3,7 @@ package twik
 import (
 	"errors"
 	"fmt"
+	"launchpad.net/twik/ast"
 )
 
 var defaultGlobals = []struct {
@@ -164,7 +165,7 @@ func divFn(args []interface{}) (value interface{}, err error) {
 	return resi, nil
 }
 
-func andFn(scope *Scope, args []Node) (value interface{}, err error) {
+func andFn(scope *Scope, args []ast.Node) (value interface{}, err error) {
 	if len(args) == 0 {
 		return true, nil
 	}
@@ -180,7 +181,7 @@ func andFn(scope *Scope, args []Node) (value interface{}, err error) {
 	return value, err
 }
 
-func orFn(scope *Scope, args []Node) (value interface{}, err error) {
+func orFn(scope *Scope, args []ast.Node) (value interface{}, err error) {
 	if len(args) == 0 {
 		return false, nil
 	}
@@ -196,7 +197,7 @@ func orFn(scope *Scope, args []Node) (value interface{}, err error) {
 	return value, err
 }
 
-func ifFn(scope *Scope, args []Node) (value interface{}, err error) {
+func ifFn(scope *Scope, args []ast.Node) (value interface{}, err error) {
 	if len(args) < 2 || len(args) > 3 {
 		return nil, errors.New(`function "if" takes two or three arguments`)
 	}
@@ -213,11 +214,11 @@ func ifFn(scope *Scope, args []Node) (value interface{}, err error) {
 	return scope.Eval(args[1])
 }
 
-func varFn(scope *Scope, args []Node) (value interface{}, err error) {
+func varFn(scope *Scope, args []ast.Node) (value interface{}, err error) {
 	if len(args) == 0 || len(args) > 2 {
 		return nil, errors.New("var takes one or two arguments")
 	}
-	symbol, ok := args[0].(*Symbol)
+	symbol, ok := args[0].(*ast.Symbol)
 	if !ok {
 		return nil, errors.New("var takes a symbol as first argument")
 	}
@@ -232,11 +233,11 @@ func varFn(scope *Scope, args []Node) (value interface{}, err error) {
 	return nil, scope.Create(symbol.Name, value)
 }
 
-func setFn(scope *Scope, args []Node) (value interface{}, err error) {
+func setFn(scope *Scope, args []ast.Node) (value interface{}, err error) {
 	if len(args) != 2 {
 		return nil, errors.New(`function "set" takes two arguments`)
 	}
-	symbol, ok := args[0].(*Symbol)
+	symbol, ok := args[0].(*ast.Symbol)
 	if !ok {
 		return nil, errors.New(`function "set" takes a symbol as first argument`)
 	}
@@ -247,7 +248,7 @@ func setFn(scope *Scope, args []Node) (value interface{}, err error) {
 	return nil, scope.Set(symbol.Name, value)
 }
 
-func doFn(scope *Scope, args []Node) (value interface{}, err error) {
+func doFn(scope *Scope, args []ast.Node) (value interface{}, err error) {
 	scope = scope.Branch()
 	for _, arg := range args {
 		value, err = scope.Eval(arg)
@@ -258,23 +259,23 @@ func doFn(scope *Scope, args []Node) (value interface{}, err error) {
 	return value, nil
 }
 
-func funcFn(scope *Scope, args []Node) (value interface{}, err error) {
+func funcFn(scope *Scope, args []ast.Node) (value interface{}, err error) {
 	if len(args) < 2 {
 		return nil, errors.New(`func takes three or more arguments`)
 	}
 	i := 0
 	var name string
-	if symbol, ok := args[0].(*Symbol); ok {
+	if symbol, ok := args[0].(*ast.Symbol); ok {
 		name = symbol.Name
 		i++
 	}
-	list, ok := args[i].(*List)
+	list, ok := args[i].(*ast.List)
 	if !ok {
 		return nil, errors.New(`func takes a list of parameters`)
 	}
 	params := list.Nodes
 	for _, param := range params {
-		if _, ok := param.(*Symbol); !ok {
+		if _, ok := param.(*ast.Symbol); !ok {
 			return nil, errors.New("func's list of parameters must be a list of symbols")
 		}
 	}
@@ -299,7 +300,7 @@ func funcFn(scope *Scope, args []Node) (value interface{}, err error) {
 		}
 		scope = scope.Branch()
 		for i, arg := range args {
-			err := scope.Create(params[i].(*Symbol).Name, arg)
+			err := scope.Create(params[i].(*ast.Symbol).Name, arg)
 			if err != nil {
 				panic("must not happen: " + err.Error())
 			}

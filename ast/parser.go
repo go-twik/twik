@@ -1,4 +1,4 @@
-package twik
+package ast
 
 import (
 	"errors"
@@ -89,7 +89,7 @@ func Parse(fset *FileSet, name string, code []byte) (Node, error) {
 	return ParseString(fset, name, string(code))
 }
 
-// Parse parses a string containing twik code and returns
+// ParseString parses a string containing twik code and returns
 // the resulting parsed tree.
 //
 // Positioning information for the parsed code will be stored in
