@@ -5,7 +5,9 @@ import (
 	"code.google.com/p/go.crypto/ssh/terminal"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"os"
+	"reflect"
 	"strings"
 )
 
@@ -17,15 +19,48 @@ func main() {
 	}
 }
 
+func printfFn(args []interface{}) (interface{}, error) {
+	if len(args) > 0 {
+		if format, ok := args[0].(string); ok {
+			_, err := fmt.Printf(format, args[1:]...)
+			return nil, err
+		}
+	}
+	return nil, fmt.Errorf("printf takes a format string")
+}
+
 func run() error {
+	fset := twik.NewFileSet()
+	scope := twik.NewScope(fset)
+	scope.Create("printf", printfFn)
+
+	if len(os.Args) > 1 {
+		if strings.HasPrefix(os.Args[1], "-") {
+			return fmt.Errorf("usage: twik [<source file>]")
+		}
+		f, err := os.Open(os.Args[1])
+		if err != nil {
+			return err
+		}
+		defer f.Close()
+		data, err := ioutil.ReadAll(f)
+		if err != nil {
+			return err
+		}
+		node, err := twik.Parse(fset, os.Args[1], data)
+		if err != nil {
+			return err
+		}
+
+		_, err = scope.Eval(node)
+		return err
+	}
+
 	state, err := terminal.MakeRaw(1)
 	if err != nil {
 		return err
 	}
 	defer terminal.Restore(1, state)
-
-	fset := twik.NewFileSet()
-	scope := twik.NewScope(fset)
 
 	t := terminal.NewTerminal(os.Stdout, "> ")
 	unclosed := ""
@@ -58,7 +93,11 @@ func run() error {
 			continue
 		}
 		if value != nil {
-			fmt.Printf("%#v\n", value)
+			if reflect.TypeOf(value).Kind() == reflect.Func {
+				fmt.Println("#func")
+			} else {
+				fmt.Printf("%#v\n", value)
+			}
 		}
 	}
 	fmt.Println()
