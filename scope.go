@@ -1,3 +1,9 @@
+// Package twik implements a tiny embeddable language for Go.
+//
+// For details, see the blog post:
+//
+//     http://blog.labix.org/2013/07/16/twik-a-tiny-language-for-go
+//
 package twik
 
 import (
