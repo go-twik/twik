@@ -29,10 +29,15 @@ func printfFn(args []interface{}) (interface{}, error) {
 	return nil, fmt.Errorf("printf takes a format string")
 }
 
+func listFn(args []interface{}) (interface{}, error) {
+	return args, nil
+}
+
 func run() error {
 	fset := twik.NewFileSet()
 	scope := twik.NewScope(fset)
 	scope.Create("printf", printfFn)
+	scope.Create("list", listFn)
 
 	if len(os.Args) > 1 {
 		if strings.HasPrefix(os.Args[1], "-") {
@@ -95,8 +100,16 @@ func run() error {
 		if value != nil {
 			if reflect.TypeOf(value).Kind() == reflect.Func {
 				fmt.Println("#func")
-			} else if v, ok := value.([]interface{}); ok && len(v) == 0 {
-				fmt.Println("()")
+			} else if v, ok := value.([]interface{}); ok {
+				if len(v) == 0 {
+					fmt.Println("()")
+				} else {
+					fmt.Print("(list")
+					for _, e := range v {
+						fmt.Printf(" %#v", e)
+					}
+					fmt.Println(")")
+				}
 			} else {
 				fmt.Printf("%#v\n", value)
 			}
