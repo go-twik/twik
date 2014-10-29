@@ -21,6 +21,7 @@ func (S) TestEval(c *C) {
 		scope := twik.NewScope(fset)
 		scope.Create("sprintf", sprintfFn)
 		scope.Create("list", listFn)
+		scope.Create("append", appendFn)
 		value, err := scope.Eval(node)
 		if e, ok := test.value.(error); ok {
 			c.Assert(err, ErrorMatches, e.Error(), Commentf("Code: %s", test.code))
@@ -30,7 +31,7 @@ func (S) TestEval(c *C) {
 			if i, ok := tvalue.(int); ok {
 				tvalue = int64(i)
 			}
-			c.Assert(err, IsNil)
+			c.Assert(err, IsNil, Commentf("Code: %s", test.code))
 			c.Assert(value, DeepEquals, tvalue, Commentf("Code: %s", test.code))
 		}
 	}
@@ -42,13 +43,21 @@ func sprintfFn(args []interface{}) (interface{}, error) {
 	}
 	format, ok := args[0].(string)
 	if !ok {
-		return nil, fmt.Errorf("sprintf format argument must be a string")
+		return nil, fmt.Errorf("sprintf takes format string as first argument")
 	}
 	return fmt.Sprintf(format, args[1:]...), nil
 }
 
 func listFn(args []interface{}) (interface{}, error) {
 	return args, nil
+}
+
+func appendFn(args []interface{}) (interface{}, error) {
+	list, ok := args[0].([]interface{})
+	if !ok {
+		return nil, fmt.Errorf("append takes list as first argument")
+	}
+	return append(list, args[1:]...), nil
 }
 
 func errorf(format string, args ...interface{}) error {
@@ -255,10 +264,10 @@ var evalList = []struct {
 		false,
 	}, {
 		`(== 1 2 3)`,
-		errorf("twik source:1:2: == expects two values"),
+		errorf("twik source:1:2: == takes two values"),
 	}, {
 		`(==)`,
-		errorf("twik source:1:2: == expects two values"),
+		errorf("twik source:1:2: == takes two values"),
 	},
 
 	// !=
@@ -282,10 +291,10 @@ var evalList = []struct {
 		true,
 	}, {
 		`(!= 1 2 3)`,
-		errorf("twik source:1:2: != expects two values"),
+		errorf("twik source:1:2: != takes two values"),
 	}, {
 		`(!=)`,
-		errorf("twik source:1:2: != expects two values"),
+		errorf("twik source:1:2: != takes two values"),
 	},
 
 
@@ -436,7 +445,7 @@ var evalList = []struct {
 	// for
 	{
 		`(for 1 2 3)`,
-		errorf("twik source:1:2: for expects four or more arguments"),
+		errorf("twik source:1:2: for takes four or more arguments"),
 	}, {
 		`(for (error "init") (error "test") (error "step") (error "code"))`,
 		errorf("twik source:1:7: init"),
@@ -450,9 +459,31 @@ var evalList = []struct {
 		`(for () () (error "step") ())`,
 		errorf("twik source:1:13: step"),
 	}, {
-		`(for (var x 0) (!= x 10) (set x (+ x 1)) (* 3 x) (* 2 x))`,
-		18,
+		`(for (var i 0) false () ()) i`,
+		errorf("twik source:1:29: undefined symbol: i"),
+	}, {
+		`(var x 0) (for (var i 0) (!= i 4) (set i (+ i 1)) (set x (+ x i)) (* 2 x))`,
+		12,
 	},
+
+	// range
+	{
+		`(range 1 2)`,
+		errorf("twik source:1:2: range takes three or more arguments"),
+	}, {
+		`(range 1 2 3)`,
+		errorf(`twik source:1:2: range takes var name or \(i elem\) var name pair as first argument`),
+	}, {
+		`(range i 0 ()) i`,
+		errorf("twik source:1:16: undefined symbol: i"),
+	}, {
+		`(var x 0) (range i 4 (set x (+ x i)) (* 2 x))`,
+		12,
+	}, {
+		`(var l ()) (range (i e) (list "A" "B" "C") (set l (append l i e))) l`,
+		[]interface {}{0, "A", 1, "B", 2, "C"},
+	},
+
 
 	// calling of custom functions
 	{

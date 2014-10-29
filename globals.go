@@ -28,6 +28,7 @@ var defaultGlobals = []struct {
 	{"do", doFn},
 	{"func", funcFn},
 	{"for", forFn},
+	{"range", rangeFn},
 }
 
 func errorFn(args []interface{}) (value interface{}, err error) {
@@ -41,14 +42,14 @@ func errorFn(args []interface{}) (value interface{}, err error) {
 
 func eqFn(args []interface{}) (value interface{}, err error) {
 	if len(args) != 2 {
-		return nil, errors.New("== expects two values")
+		return nil, errors.New("== takes two values")
 	}
 	return args[0] == args[1], nil
 }
 
 func neFn(args []interface{}) (value interface{}, err error) {
 	if len(args) != 2 {
-		return nil, errors.New("!= expects two values")
+		return nil, errors.New("!= takes two values")
 	}
 	return args[0] != args[1], nil
 }
@@ -323,9 +324,10 @@ func funcFn(scope *Scope, args []ast.Node) (value interface{}, err error) {
 
 func forFn(scope *Scope, args []ast.Node) (value interface{}, err error) {
 	if len(args) < 4 {
-		return nil, errors.New(`for expects four or more arguments`)
+		return nil, errors.New(`for takes four or more arguments`)
 	}
 	init, test, step, code := args[0], args[1], args[2], args[3:]
+	scope = scope.Branch()
 	_, err = scope.Eval(init)
 	if err != nil {
 		return nil, err
@@ -352,4 +354,59 @@ func forFn(scope *Scope, args []ast.Node) (value interface{}, err error) {
 		}
 	}
 	panic("unreachable")
+}
+
+func rangeFn(scope *Scope, args []ast.Node) (value interface{}, err error) {
+	if len(args) < 3 {
+		return nil, errors.New(`range takes three or more arguments`)
+	}
+	var iname, ename string
+	if symbol, ok := args[0].(*ast.Symbol); ok {
+		iname = symbol.Name
+	} else if list, ok := args[0].(*ast.List); ok && len(list.Nodes) == 2 {
+		symbol1, ok1 := list.Nodes[0].(*ast.Symbol)
+		symbol2, ok2 := list.Nodes[1].(*ast.Symbol)
+		if ok1 && ok2 {
+			iname = symbol1.Name
+			ename = symbol2.Name
+		}
+	}
+	if iname == "" {
+		return nil, errors.New(`range takes var name or (i elem) var name pair as first argument`)
+	}
+	scope = scope.Branch()
+	value, err = scope.Eval(args[1])
+	if err != nil {
+		return nil, err
+	}
+	code := args[2:]
+	if n, ok := value.(int64); ok {
+		scope.Create(iname, 0)
+		for i := int64(0); i < n; i++ {
+			scope.Set(iname, i)
+			for _, c := range code {
+				value, err = scope.Eval(c)
+				if err != nil {
+					return nil, err
+				}
+			}
+		}
+		return value, nil
+	}
+	if list, ok := value.([]interface{}); ok {
+		scope.Create(iname, 0)
+		scope.Create(ename, nil)
+		for i, e := range list {
+			scope.Set(iname, i)
+			scope.Set(ename, e)
+			for _, c := range code {
+				value, err = scope.Eval(c)
+				if err != nil {
+					return nil, err
+				}
+			}
+		}
+		return value, nil
+	}
+	return nil, errors.New(`range takes an integer or a list as second argument`)
 }
