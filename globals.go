@@ -322,10 +322,10 @@ func funcFn(scope *Scope, args []ast.Node) (value interface{}, err error) {
 }
 
 func forFn(scope *Scope, args []ast.Node) (value interface{}, err error) {
-	if len(args) != 4 {
-		return nil, errors.New(`for expects four arguments`)
+	if len(args) < 4 {
+		return nil, errors.New(`for expects four or more arguments`)
 	}
-	init, test, step, code := args[0], args[1], args[2], args[3]
+	init, test, step, code := args[0], args[1], args[2], args[3:]
 	_, err = scope.Eval(init)
 	if err != nil {
 		return nil, err
@@ -339,9 +339,11 @@ func forFn(scope *Scope, args []ast.Node) (value interface{}, err error) {
 			return value, nil
 		}
 
-		value, err = scope.Eval(code)
-		if err != nil {
-			return nil, err
+		for _, c := range code {
+			value, err = scope.Eval(c)
+			if err != nil {
+				return nil, err
+			}
 		}
 
 		_, err = scope.Eval(step)

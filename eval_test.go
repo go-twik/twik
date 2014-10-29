@@ -436,7 +436,7 @@ var evalList = []struct {
 	// for
 	{
 		`(for 1 2 3)`,
-		errorf("twik source:1:2: for expects four arguments"),
+		errorf("twik source:1:2: for expects four or more arguments"),
 	}, {
 		`(for (error "init") (error "test") (error "step") (error "code"))`,
 		errorf("twik source:1:7: init"),
@@ -450,7 +450,7 @@ var evalList = []struct {
 		`(for () () (error "step") ())`,
 		errorf("twik source:1:13: step"),
 	}, {
-		`(for (var x 0) (!= x 10) (set x (+ x 1)) (* 2 x))`,
+		`(for (var x 0) (!= x 10) (set x (+ x 1)) (* 3 x) (* 2 x))`,
 		18,
 	},
 
