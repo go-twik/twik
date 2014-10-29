@@ -27,7 +27,7 @@ var defaultGlobals = []struct {
 	{"set", setFn},
 	{"do", doFn},
 	{"func", funcFn},
-	//{"for", forFn},
+	{"for", forFn},
 }
 
 func errorFn(args []interface{}) (value interface{}, err error) {
@@ -321,26 +321,33 @@ func funcFn(scope *Scope, args []ast.Node) (value interface{}, err error) {
 	return fn, nil
 }
 
-func forFn(args []interface{}) (value interface{}, err error) {
-	if len(args) != 2 {
-		return nil, errors.New(`function "for" expects two arguments`)
+func forFn(scope *Scope, args []ast.Node) (value interface{}, err error) {
+	if len(args) != 4 {
+		return nil, errors.New(`for expects four arguments`)
 	}
-	fn, ok := args[1].(func([]interface{}) (interface{}, error))
-	if !ok {
-		return nil, fmt.Errorf(`function "for" expects function as second argument; got %T`, args[0])
+	init, test, step, code := args[0], args[1], args[2], args[3]
+	_, err = scope.Eval(init)
+	if err != nil {
+		return nil, err
 	}
-	switch iter := args[0].(type) {
-	case []interface{}:
-		pair := make([]interface{}, 2)
-		for i, v := range iter {
-			pair[0] = i
-			pair[1] = v
-			value, err = fn(pair)
-			if err != nil {
-				return nil, err
-			}
+	for {
+		more, err := scope.Eval(test)
+		if err != nil {
+			return nil, err
 		}
-		return value, nil
+		if more == false {
+			return value, nil
+		}
+
+		value, err = scope.Eval(code)
+		if err != nil {
+			return nil, err
+		}
+
+		_, err = scope.Eval(step)
+		if err != nil {
+			return nil, err
+		}
 	}
-	return nil, fmt.Errorf(`function "for" cannot iterate over %T`, args[0])
+	panic("unreachable")
 }

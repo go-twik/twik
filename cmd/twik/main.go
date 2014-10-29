@@ -95,6 +95,8 @@ func run() error {
 		if value != nil {
 			if reflect.TypeOf(value).Kind() == reflect.Func {
 				fmt.Println("#func")
+			} else if v, ok := value.([]interface{}); ok && len(v) == 0 {
+				fmt.Println("()")
 			} else {
 				fmt.Printf("%#v\n", value)
 			}

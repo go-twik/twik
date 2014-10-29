@@ -434,10 +434,25 @@ var evalList = []struct {
 	},
 
 	// for
-	//{
-	//	`(for (list "a" "b" "c") (func (i v) (sprintf "%d-%v" i v)))`,
-	//	[]interface{}{},
-	//},
+	{
+		`(for 1 2 3)`,
+		errorf("twik source:1:2: for expects four arguments"),
+	}, {
+		`(for (error "init") (error "test") (error "step") (error "code"))`,
+		errorf("twik source:1:7: init"),
+	}, {
+		`(for () (error "test") (error "step") (error "code"))`,
+		errorf("twik source:1:10: test"),
+	}, {
+		`(for () () (error "step") (error "code"))`,
+		errorf("twik source:1:28: code"),
+	}, {
+		`(for () () (error "step") ())`,
+		errorf("twik source:1:13: step"),
+	}, {
+		`(for (var x 0) (!= x 10) (set x (+ x 1)) (* 2 x))`,
+		18,
+	},
 
 	// calling of custom functions
 	{
