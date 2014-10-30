@@ -8,7 +8,8 @@ package twik
 
 import (
 	"fmt"
-	"launchpad.net/twik/ast"
+
+	"gopkg.in/twik.v1/ast"
 )
 
 // Scope is an environment where twik logic may be evaluated in.

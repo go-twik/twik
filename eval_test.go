@@ -2,9 +2,10 @@ package twik_test
 
 import (
 	"fmt"
-	. "launchpad.net/gocheck"
-	"launchpad.net/twik"
 	"testing"
+
+	. "gopkg.in/check.v1"
+	"gopkg.in/twik.v1"
 )
 
 func Test(t *testing.T) { TestingT(t) }

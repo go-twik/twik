@@ -1,14 +1,16 @@
 package main
 
 import (
-	"launchpad.net/twik"
-	"code.google.com/p/go.crypto/ssh/terminal"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
 	"reflect"
 	"strings"
+
+	"code.google.com/p/go.crypto/ssh/terminal"
+
+	"gopkg.in/twik.v1"
 )
 
 func main() {

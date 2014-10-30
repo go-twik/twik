@@ -3,7 +3,8 @@ package twik
 import (
 	"errors"
 	"fmt"
-	"launchpad.net/twik/ast"
+
+	"gopkg.in/twik.v1/ast"
 )
 
 var defaultGlobals = []struct {

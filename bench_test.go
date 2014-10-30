@@ -1,8 +1,8 @@
 package twik_test
 
 import (
-	. "launchpad.net/gocheck"
-	"launchpad.net/twik"
+	. "gopkg.in/check.v1"
+	"gopkg.in/twik.v1"
 )
 
 func (S) BenchmarkParse0(c *C) {

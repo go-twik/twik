@@ -1,7 +1,7 @@
 package twik
 
 import (
-	"launchpad.net/twik/ast"
+	"gopkg.in/twik.v1/ast"
 )
 
 // NewFileSet returns a new FileSet to hold positioning information

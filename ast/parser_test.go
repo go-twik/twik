@@ -2,10 +2,11 @@ package ast_test
 
 import (
 	"fmt"
-	"github.com/kr/pretty"
-	. "launchpad.net/gocheck"
-	"launchpad.net/twik/ast"
 	"testing"
+
+	"github.com/kr/pretty"
+	. "gopkg.in/check.v1"
+	"gopkg.in/twik.v1/ast"
 )
 
 func Test(t *testing.T) { TestingT(t) }
