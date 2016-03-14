@@ -8,7 +8,7 @@ import (
 	"reflect"
 	"strings"
 
-	"code.google.com/p/go.crypto/ssh/terminal"
+	"golang.org/x/crypto/ssh/terminal"
 
 	"gopkg.in/twik.v1"
 )
